@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="dashboard-container">
+
+    <div class="dashboard-header">
+        <h1>Cold Mailer Demo</h1>
+        <p class="dashboard-subtitle">
+            Upload contacts, validate data, and select recipients
+        </p>
+    </div>
+
+    <div class="filter-controls">
+        <a href="{% url 'dashboard' %}" class="filter-btn">
+            View Dashboard
+        </a>
+    </div>
+
+    <!-- Drag & Drop Upload -->
+    <div class="status-card total">
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+            {% csrf_token %}
+
+            <div id="drop-zone"
+                    style="
+                        border:2px dashed #c7d2fe;
+                        border-radius:12px;
+                        padding:32px;
+                        text-align:center;
+                        cursor:pointer;
+                        background:#f8fafc;
+                        position:relative;
+                    ">
+                <p class="text-muted">
+                    Drag & drop your file here or click to browse
+                </p>
+                <div style="height:0; overflow: hidden;">
+                    {{ form }}
+                </div>
+                <p id="file-info" class="text-muted" style="margin-top:12px;"></p>
+            </div>
+            
+            <button type="submit" class="filter-btn active" style="margin-top:16px;">
+                Upload File
+            </button>
+            <span class="filter-label">
+                &nbsp;&nbsp;Accepted formats: PDF, XLSX, CSV
+            </span>
+        </form>
+
+        {% if error %}
+            <p style="color:#ef4444; margin-top:12px;">
+                {{ error }}
+            </p>
+        {% endif %}
+    </div>
+
+    {% if parsed_data %}
+    <!-- Row + Selection Count -->
+    <div class="filter-controls">
+        <span class="filter-label">
+            Total rows: <b id="total-count">{{ parsed_data|length }}</b>
+        </span>
+        <span class="filter-label">
+            Selected: <b id="selected-count">0</b>
+        </span>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="table-container">
+        <form method="post" action="{% url 'preview_email' %}">
+            {% csrf_token %}
+            <table class="email-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all">
+                            Select All
+                        </th>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in parsed_data %}
+                    <tr class="email-row">
+                        <td>
+                            <input type="checkbox"
+                                   class="row-check"
+                                   name="rows[{{ forloop.counter0 }}][selected]"
+                                   value="1">
+                            <input type="hidden" name="rows[{{ forloop.counter0 }}][name]" value="{{ row.name }}">
+                            <input type="hidden" name="rows[{{ forloop.counter0 }}][email]" value="{{ row.email }}">
+                            <input type="hidden" name="rows[{{ forloop.counter0 }}][company]" value="{{ row.company }}">
+                        </td>
+                        <td class="recipient">{{ row.name }}</td>
+                        <td class="subject">{{ row.company }}</td>
+                        <td class="timestamp">{{ row.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="text-align:right; margin-top:24px;">
+                <button type="submit" class="filter-btn active">
+                    Preview Email
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<script src="{% static 'js/drag_drop.js' %}">
+</script>
+{% endblock %}

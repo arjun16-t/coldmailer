@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Dashboard</title>
+    <!-- Modern, professional font stack -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+{% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="flash-message success">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<body>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <header class="dashboard-header">
+            <h1>Email Dashboard</h1>
+            <p class="dashboard-subtitle">Monitor and manage your email delivery status</p>
+        </header>
+        
+        <!-- Status Summary Cards -->
+        <div class="status-summary">
+            <div class="status-card total">
+                <h3>Total Emails</h3>
+                <div class="count">{{ total_emails }}</div>
+            </div>
+            <div class="status-card success">
+                <h3>Successful</h3>
+                <div class="count">{{ success_count }}</div>
+            </div>
+            <div class="status-card failed">
+                <h3>Failed</h3>
+                <div class="count">{{ failed_count }}</div>
+            </div>
+            <div class="status-card pending">
+                <h3>Pending</h3>
+                <div class="count">{{ pending_count }}</div>
+            </div>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <span class="filter-label">Filter by status:</span>
+            <button class="filter-btn active" data-filter="all">All Emails</button>
+            <button class="filter-btn" data-filter="SUCCESS">Successful</button>
+            <button class="filter-btn" data-filter="FAILED">Failed</button>
+            <button class="filter-btn" data-filter="PENDING">Pending</button>
+        </div>
+        
+        <!-- Email Table -->
+        <div class="table-container">
+            <table class="email-table">
+                <thead>
+                    <tr>
+                        <th>Recipient</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="email-table-body">
+                    {% for email in emails %}
+                    <tr class="email-row" id="row-{{ email.id }}" data-status="{{ email.status }}">
+                        <td>
+                            <div class="recipient">{{ email.email }}</div>
+                        </td>
+                        <td>
+                            <div class="company">{{ email.company }}</div>
+                        </td>
+                        <td>
+                            {% if email.status == 'SUCCESS' %}
+                                <span class="status-badge status-success">{{ email.status }}</span>
+                            {% elif email.status == 'FAILED' %}
+                                <span class="status-badge status-failed">{{ email.status }}</span>
+                            {% elif email.status == 'PENDING' %}
+                                <span class="status-badge status-pending">{{ email.status }}</span>
+                            {% else %}
+                                <span class="status-badge">{{ email.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="timestamp">{{ email.created_at|date:"M d, Y H:i" }}</div>
+                        </td>
+                        <td style="position: relative;">
+                            <button class="filter-btn view-details-btn" data-id="{{ email.id }}">
+                                View Details
+                            </button>
+
+                            <div class="details-dropdown hidden" id="details-{{ email.id }}"></div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div>📭</div>
+                            <p>No emails found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <p>Email Dashboard • Last updated: {% now "F j, Y, g:i a" %}</p>
+        </footer>
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

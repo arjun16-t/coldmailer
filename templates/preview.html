@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <div class="dashboard-header">
+        <h1>Email Preview</h1>
+        <p class="dashboard-subtitle">
+            Review recipients and email content before sending
+        </p>
+    </div>
+
+    <!-- Recipients -->
+    <div class="status-card total" style="margin-bottom:24px;">
+        <h3>Recipients ({{ people|length }})</h3>
+        <ul class="text-muted" style="margin-top:12px;">
+            {% for person in people %}
+                <li>
+                    {{ person.name }} — {{ person.email }} ({{ person.company }})
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Email Body -->
+    <div class="status-card total" style="margin-bottom:24px;">
+        <h3>Email Content</h3>
+        <pre style="
+            margin-top:12px;
+            background:#f8fafc;
+            padding:16px;
+            border-radius:8px;
+            white-space:pre-wrap;
+            font-size:14px;
+        ">{{ template }}</pre>
+    </div>
+
+    <!-- Send -->
+    <div style="display:flex; gap:12px; align-items:center;">
+        <button type="button"
+                class="filter-btn secondary"
+                onclick="window.history.back();">
+            ← Go Back
+        </button>
+        <form method="post"
+                action="{% url 'send_emails' %}"
+                onsubmit="
+                const btn=this.querySelector('button');
+                btn.disabled=true;
+                btn.innerText='Sending…';
+                ">
+            {% csrf_token %}
+            {% for person in people %}
+                <input type="hidden" name="rows[{{ forloop.counter0 }}][selected]" value="1">
+                <input type="hidden" name="rows[{{ forloop.counter0 }}][name]" value="{{ person.name }}">
+                <input type="hidden" name="rows[{{ forloop.counter0 }}][email]" value="{{ person.email }}">
+                <input type="hidden" name="rows[{{ forloop.counter0 }}][company]" value="{{ person.company }}">
+            {% endfor %}
+
+            <button type="submit" class="filter-btn active">
+                Send Emails
+            </button>
+            
+        </form>
+    </div>
+
+</div>
+{% endblock %}
