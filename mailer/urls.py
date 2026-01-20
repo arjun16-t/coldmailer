@@ -3,7 +3,7 @@ from .views import upload_file, preview_email, send_emails, dashboard
 from .views import retry_email, status_page, dashboard_data, email_detail, email_content
 
 urlpatterns = [
-    path("", upload_file),
+    path("", upload_file, name="upload"),
     path("preview/", preview_email, name="preview_email"),
     path("send/", send_emails, name="send_emails"),         # POST only
     

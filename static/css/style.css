@@ -13,6 +13,49 @@ body {
     min-height: 100vh;
 }
 
+/* Top Navigation Bar */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 14px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.nav-brand {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.nav-right {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-link {
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.nav-link.active {
+    background: #6366f1;
+    color: white;
+}
+
+
 /* Dashboard Container */
 .dashboard-container {
     max-width: 1400px;
@@ -24,6 +67,19 @@ body {
     margin-bottom: 32px;
     padding-bottom: 24px;
     border-bottom: 1px solid #e2e8f0;
+}
+    
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.page-subtitle {
+    display: block;
+    font-size: 16px;
+    color: #64748b;
+    margin-top: 2px;
 }
 
 .dashboard-header h1 {
@@ -100,6 +156,21 @@ body {
     font-size: 32px;
     font-weight: 700;
     color: #1e293b;
+}
+
+/* Search Controls */
+.search-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.search-input {
+    padding: 10px 14px;
+    width: 260px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
 }
 
 /* Filter Controls */
@@ -298,6 +369,17 @@ body {
         padding: 16px;
     }
     
+    .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .nav-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
     .status-summary {
         grid-template-columns: 1fr;
     }
@@ -338,6 +420,23 @@ body {
         margin-bottom: 24px;
     }
 }
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    align-items: center;
+    margin-top: 24px;
+    font-size: 14px;
+}
+
+.pagination a {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 500;
+}
+
 
 /* Footer */
 .dashboard-footer {

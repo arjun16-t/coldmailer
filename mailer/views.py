@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.conf import settings
-from django.db.models import Count
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 from .forms import UploadFileForm
 from .parser import parse_file
@@ -119,22 +120,30 @@ def send_emails(request):
     return redirect("dashboard")
 
 def dashboard(request):
-    emails = EmailLog.objects.all()
+    query = request.GET.get("q", "").strip()
+    page_number = request.GET.get("page", 1)
     
-    total_emails = emails.count()
-    success_count = emails.filter(status='SUCCESS').count()
-    failed_count = emails.filter(status='FAILED').count()
-    pending_count = emails.filter(status='PENDING').count()
+    base_qs = EmailLog.objects.all()
     
-    sliced_list = emails.order_by("-created_at")[:200]
+    if query:
+        base_qs = base_qs.filter(
+            Q(email__icontains = query) |
+            Q(company__icontains=query)
+        )
     
-    return render(request, "dashboard.html", {
-        "emails": sliced_list,
-        "total_emails": total_emails,
-        "success_count": success_count,
-        "failed_count": failed_count,
-        "pending_count": pending_count,
-    })
+    paginator = Paginator(base_qs.order_by("-created_at"), 25)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        "emails": page_obj,
+        "query": query,
+        "total_emails": base_qs.count(),
+        "success_count": base_qs.filter(status="SUCCESS").count(),
+        "failed_count": base_qs.filter(status="FAILED").count(),
+        "pending_count": base_qs.filter(status="PENDING").count(),
+    }
+    
+    return render(request, "dashboard.html", context)
 
 def dashboard_data(request):
     emails = EmailLog.objects.all()

@@ -1,14 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-container">
-
-    <div class="dashboard-header">
-        <h1>Email Preview</h1>
-        <p class="dashboard-subtitle">
-            Review recipients and email content before sending
-        </p>
+<nav class="top-nav">
+    <div class="nav-left">
+        <h1 class="page-title">Email Preview</h1>
+        <span class="page-subtitle">Review recipients and email content before sending</span>
     </div>
+
+    <div class="nav-right">
+        <a href="{% url 'upload' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">
+            Upload
+        </a>
+        
+        <a href="{% url 'dashboard' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            Dashboard
+        </a>
+        
+        <a href="{% url 'preview_email' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'preview_email' %}active{% endif %}">
+            Preview
+        </a>
+    </div>
+</nav>
+<div class="dashboard-container">
 
     <!-- Recipients -->
     <div class="status-card total" style="margin-bottom:24px;">
