@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.urls import reverse
 from django.conf import settings
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -13,6 +12,7 @@ from .tasks import send_email_task
 
 from .models import EmailLog
 
+import textwrap
 import tempfile
 import os
 
@@ -68,6 +68,13 @@ def send_emails(request):
     if request.method != "POST":
         return redirect("/")
     
+    raw_body = request.POST.get("email_body", "")
+    email_body_template = textwrap.dedent(raw_body).strip()
+
+    if not email_body_template:
+        messages.error(request, "Email content is empty.")
+        return redirect("preview_email")
+    
     sent_count = 0
     
     for key in request.POST:
@@ -88,11 +95,21 @@ def send_emails(request):
             continue
         
         # Logging Emails
+        try:
+            personalized_body = email_body_template.format(
+                name=name,
+                company=company
+            )
+        except KeyError as e:
+            messages.error(request, f"Invalid placeholder: {e}")
+            return redirect("preview_email")
+        
         log = EmailLog.objects.create(
-            email = email,
-            name = name,
-            company = company,
-            status = "PENDING"
+            email=email,
+            name=name,
+            company=company,
+            email_body=personalized_body,
+            status="PENDING"
         )
         
         try:

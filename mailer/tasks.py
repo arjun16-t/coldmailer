@@ -19,10 +19,10 @@ def send_email_task(self, email, name, company, attachment_path):
     try:
         enforce_domain_rate_limit(email)
         
-        log.email_body = send_mail(
+        send_mail(
             to_email=email,
-            name=name,
-            company=company,
+            subject="Application for Software Development Engineer Internship | Arjun Tomar",
+            body=log.email_body,
             attachment_path=attachment_path
         )
         

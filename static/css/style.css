@@ -55,6 +55,113 @@ body {
     color: white;
 }
 
+/* Preview Page */
+.preview-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.preview-list {
+    margin-top: 12px;
+    margin-bottom: 24px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #6366f1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+
+    font-size: 14px;
+    color: #334155;
+}
+
+.preview-list h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.list li {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e293b;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    transition: background 0.15s ease;
+}
+
+.list li:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.list li:hover {
+    background: #f8fafc;
+}
+
+.list li strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.list li span {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.email-content-card {
+    margin-bottom: 24px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #6366f1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.email-content-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+
+.editable-email {
+    width: 100%;
+    min-height: 280px;
+    background: #f8fafc;
+    padding: 16px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    resize: vertical;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.editable-email:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    background: #ffffff;
+}
+
 
 /* Dashboard Container */
 .dashboard-container {
@@ -68,7 +175,7 @@ body {
     padding-bottom: 24px;
     border-bottom: 1px solid #e2e8f0;
 }
-    
+
 .page-title {
     font-size: 28px;
     font-weight: 700;

@@ -10,16 +10,6 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
-{% if messages %}
-    <div style="margin-bottom: 20px;">
-        {% for message in messages %}
-        <div class="flash-message success">
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-{% endif %}
-
 <body>
     <nav class="top-nav">
         <div class="nav-left">
@@ -64,7 +54,15 @@
                 <div class="count">{{ pending_count }}</div>
             </div>
         </div>
-        
+        {% if messages %}
+            <div style="margin-bottom: 20px;">
+                {% for message in messages %}
+                <div class="flash-message success">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
         <!-- Filter Controls -->
         <div class="filter-controls">
             <span class="filter-label">Filter by status:</span>

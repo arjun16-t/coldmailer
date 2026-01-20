@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
+
 <nav class="top-nav">
     <div class="nav-left">
         <h1 class="page-title">Email Preview</h1>
-        <span class="page-subtitle">Review recipients and email content before sending</span>
+        <span class="page-subtitle">
+            Review recipients and email content before sending
+        </span>
     </div>
 
     <div class="nav-right">
@@ -12,73 +15,92 @@
             class="nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">
             Upload
         </a>
-        
+
         <a href="{% url 'dashboard' %}"
             class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
             Dashboard
         </a>
-        
+
         <a href="{% url 'preview_email' %}"
-            class="nav-link {% if request.resolver_match.url_name == 'preview_email' %}active{% endif %}">
+            class="nav-link active">
             Preview
         </a>
     </div>
 </nav>
-<div class="dashboard-container">
+
+<div class="preview-container">
 
     <!-- Recipients -->
-    <div class="status-card total" style="margin-bottom:24px;">
+    <div class="preview-list">
         <h3>Recipients ({{ people|length }})</h3>
-        <ul class="text-muted" style="margin-top:12px;">
+        <ul class="list">
             {% for person in people %}
                 <li>
-                    {{ person.name }} — {{ person.email }} ({{ person.company }})
+                    <strong>{{ person.name }}</strong>
+                    <span>— {{ person.email }}</span>
+                    <span>({{ person.company }})</span>
                 </li>
             {% endfor %}
         </ul>
     </div>
 
-    <!-- Email Body -->
-    <div class="status-card total" style="margin-bottom:24px;">
-        <h3>Email Content</h3>
-        <pre style="
-            margin-top:12px;
-            background:#f8fafc;
-            padding:16px;
-            border-radius:8px;
-            white-space:pre-wrap;
-            font-size:14px;
-        ">{{ template }}</pre>
-    </div>
-
-    <!-- Send -->
-    <div style="display:flex; gap:12px; align-items:center;">
-        <button type="button"
-                class="filter-btn secondary"
-                onclick="window.history.back();">
-            ← Go Back
-        </button>
-        <form method="post"
-                action="{% url 'send_emails' %}"
-                onsubmit="
-                const btn=this.querySelector('button');
+    <!-- FORM STARTS HERE -->
+    <form method="post"
+            action="{% url 'send_emails' %}"
+            onsubmit="
+                return validateEmailTemplate();
+                document.getElementById('email-editor').setAttribute('readonly', true);
+                const btn=this.querySelector('.send-btn');
                 btn.disabled=true;
                 btn.innerText='Sending…';
-                ">
-            {% csrf_token %}
-            {% for person in people %}
-                <input type="hidden" name="rows[{{ forloop.counter0 }}][selected]" value="1">
-                <input type="hidden" name="rows[{{ forloop.counter0 }}][name]" value="{{ person.name }}">
-                <input type="hidden" name="rows[{{ forloop.counter0 }}][email]" value="{{ person.email }}">
-                <input type="hidden" name="rows[{{ forloop.counter0 }}][company]" value="{{ person.company }}">
-            {% endfor %}
+            ">
+        {% csrf_token %}
 
-            <button type="submit" class="filter-btn active">
+        <!-- Email Body -->
+        <div class="email-content-card">
+            <h3>Email Content</h3>
+            <textarea
+                id="email-editor"
+                name="email_body"
+                class="editable-email"
+                readonly
+                required
+                minlength="20"
+            >{{ template }}</textarea>
+        </div>
+
+        <!-- Hidden recipient fields -->
+        {% for person in people %}
+            <input type="hidden" name="rows[{{ forloop.counter0 }}][selected]" value="1">
+            <input type="hidden" name="rows[{{ forloop.counter0 }}][name]" value="{{ person.name }}">
+            <input type="hidden" name="rows[{{ forloop.counter0 }}][email]" value="{{ person.email }}">
+            <input type="hidden" name="rows[{{ forloop.counter0 }}][company]" value="{{ person.company }}">
+        {% endfor %}
+
+        <!-- Actions -->
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button type="button"
+                    class="filter-btn secondary"
+                    onclick="window.history.back();">
+                ← Go Back
+            </button>
+
+            <button type="submit"
+                    class="filter-btn active send-btn">
                 Send Emails
             </button>
-            
-        </form>
-    </div>
+
+            <button type="button"
+                    class="filter-btn secondary"
+                    id="toggle-edit">
+                Write!!
+            </button>
+        </div>
+
+    </form>
+    <!-- FORM ENDS HERE -->
 
 </div>
+
+<script src="{% static 'js/preview.js' %}"></script>
 {% endblock %}
