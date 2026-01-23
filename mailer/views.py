@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
 
 from .forms import UploadFileForm
 from .parser import parse_file
@@ -15,6 +17,7 @@ from .models import EmailLog
 import textwrap
 import tempfile
 import os
+import json
 
 def upload_file(request):
     parsed_data = None
@@ -220,3 +223,19 @@ def email_content(request, log_id):
         f"<pre>{log.email_body}</pre>",
         content_type="text/html"
     )
+
+def schedule_followup(request, log_id):
+    if request.method != "POST":
+        return JsonResponse({
+            "error": "Invalid Request"
+        }, status = 400)
+    
+    data = json.loads(request.body)
+    days = int(data.get("days", 0))
+    
+    log = EmailLog.objects.get(id=log_id)
+    log.follow_up_at = timezone.now() + timedelta(days=days)
+    log.follow_up_done = False
+    log.save()
+    
+    return JsonResponse({"status": "ok"})

@@ -22,6 +22,9 @@ class EmailLog (models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(blank=True, null=True)
+    
+    follow_up_at = models.DateTimeField(blank=True, null=True)
+    follow_up_done = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("email", "company")

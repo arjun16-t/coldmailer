@@ -4,6 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
     autoHideFlashMessage();
 });
 
+/* ---------------- GET CSRF TOKEN ---------------- */
+
+function getCSRFToken() {
+    return document.cookie
+        .split("; ")
+        .find(row => row.startsWith("csrftoken="))
+        ?.split("=")[1];
+}
+
 /* ---------------- FILTERS ---------------- */
 
 function initFilters() {
@@ -178,7 +187,24 @@ async function toggleDetails(id) {
     currentBox.innerHTML = `
         <p><b>Queued:</b> ${data.created_at}</p>
         <p><b>Sent:</b> ${data.sent_at ?? "Not sent yet"}</p>
+        
         <hr style="margin:10px 0">
+
+        <label><b>Schedule follow-up:</b></label>
+        <select id="followup-days-${id}">
+            <option value="3">3 days</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+        </select>
+
+        <button class="filter-btn"
+                onclick="scheduleFollowUp(${id})"
+                style="margin-top:8px;">
+            Schedule
+        </button>
+        
+        <hr style="margin:10px 0">
+
         <a href="${data.content_url}" target="_blank">
             View Email Content
         </a>
@@ -187,3 +213,31 @@ async function toggleDetails(id) {
     currentBox.classList.remove("hidden");
 }
 
+async function scheduleFollowUp(id) {
+    const daysSelect = document.getElementById(`followup-days-${id}`);
+    if (!daysSelect) return;
+
+    const days = daysSelect.value;
+
+    const res = await fetch(`/followup/${id}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+        },
+        body: JSON.stringify({ days }),
+    });
+
+    if (!res.ok) {
+        alert("Failed to schedule follow-up");
+        return;
+    }
+
+    daysSelect.innerHTML += `
+        <p style="color:green; margin-top:6px;">
+            Follow-up scheduled ✔
+        </p>
+    `;
+
+    alert(`Follow-up scheduled in ${days} days`);
+}
