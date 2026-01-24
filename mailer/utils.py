@@ -1,7 +1,8 @@
 import time
+import random
 from django.core.cache import cache
 
-DOMAIN_DELAY = 60   # seconds
+DOMAIN_DELAY = random.randint(10, 70)   # seconds
 
 def enforce_domain_rate_limit(email):
     domain = email.split('@')[-1]

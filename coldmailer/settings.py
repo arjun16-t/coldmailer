@@ -137,3 +137,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULE = {
+    "check-followups-every-15-min": {
+        "task": "mailer.tasks.check_followups",
+        "schedule": 900.0,
+    }
+}

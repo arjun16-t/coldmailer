@@ -54,6 +54,18 @@
                 <div class="count">{{ pending_count }}</div>
             </div>
         </div>
+
+        {% if due_followups %}
+        <div class="status-card failed">
+            <b>Follow-ups Due</b>
+            <ul>
+                {% for f in due_followups %}
+                <li>{{ f.email }} ({{ f.company }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         {% if messages %}
             <div style="margin-bottom: 20px;">
                 {% for message in messages %}

@@ -13,7 +13,7 @@ class EmailLog (models.Model):
         choices=[
             ("PENDING", 'pending'),
             ("SUCCESS", 'success'),
-            ("FAILED", 'Failed'),
+            ("FAILED", 'failed'),
         ],
         default='PENDING'
     )

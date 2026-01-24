@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import timezone, html
 from datetime import timedelta
 
 from .forms import UploadFileForm
@@ -116,13 +116,7 @@ def send_emails(request):
         )
         
         try:
-            result = send_email_task.delay(
-                email=email,
-                name=name,
-                company=company,
-                attachment_path=str(settings.BASE_DIR / "attachments" / "Arjun_Tomar_ML_Resume.pdf")
-            )
-
+            result = send_email_task.delay(log.id)
             log.task_id = result.id
             log.save()
             
@@ -154,9 +148,17 @@ def dashboard(request):
     paginator = Paginator(base_qs.order_by("-created_at"), 25)
     page_obj = paginator.get_page(page_number)
     
+    due_followups = EmailLog.objects.filter(
+        status="SUCCESS",
+        follow_up_at__isnull=False,
+        follow_up_done=False,
+        follow_up_at__lte=timezone.now()
+    )
+    
     context = {
         "emails": page_obj,
         "query": query,
+        "due_followups": due_followups,
         "total_emails": base_qs.count(),
         "success_count": base_qs.filter(status="SUCCESS").count(),
         "failed_count": base_qs.filter(status="FAILED").count(),
@@ -181,7 +183,6 @@ def dashboard_data(request):
         })
     
     return JsonResponse({"logs": data})
-
 
 def retry_email(request, log_id):
     log = EmailLog.objects.get(id=log_id)
@@ -220,20 +221,23 @@ def email_detail(request, log_id):
 def email_content(request, log_id):
     log = EmailLog.objects.get(id=log_id)
     return HttpResponse(
-        f"<pre>{log.email_body}</pre>",
+        f"<pre>{html.escape(log.email_body)}</pre>",
         content_type="text/html"
     )
 
 def schedule_followup(request, log_id):
     if request.method != "POST":
-        return JsonResponse({
-            "error": "Invalid Request"
-        }, status = 400)
+        return JsonResponse({"error": "Invalid Request"}, status = 400)
     
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    
     days = int(data.get("days", 0))
     
     log = EmailLog.objects.get(id=log_id)
+    
     log.follow_up_at = timezone.now() + timedelta(days=days)
     log.follow_up_done = False
     log.save()

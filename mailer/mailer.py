@@ -45,3 +45,16 @@ def send_mail(to_email, subject, body, attachment_path):
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
         server.send_message(msg)
+
+def send_mail(to_email, subject, body):
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = os.getenv('EMAIL_USER')
+    msg['To'] = to_email
+
+    
+    msg.set_content(body)
+    
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
+        server.send_message(msg)
