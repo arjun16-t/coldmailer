@@ -149,7 +149,6 @@ def dashboard(request):
     page_obj = paginator.get_page(page_number)
     
     due_followups = EmailLog.objects.filter(
-        status="SUCCESS",
         follow_up_at__isnull=False,
         follow_up_done=False,
         follow_up_at__lte=timezone.now()
