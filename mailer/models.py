@@ -20,6 +20,8 @@ class EmailLog (models.Model):
     
     task_id = models.CharField(max_length=255, blank=True, null=True)
     
+    failure_reason = models.TextField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(blank=True, null=True)
     

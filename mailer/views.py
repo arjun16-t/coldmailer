@@ -11,7 +11,7 @@ from .forms import UploadFileForm
 from .parser import parse_file
 from .mailer import MAIL_CONTENT
 from .tasks import send_email_task
-
+from .utils import has_mx_record
 from .models import EmailLog
 
 import textwrap
@@ -106,6 +106,18 @@ def send_emails(request):
         except KeyError as e:
             messages.error(request, f"Invalid placeholder: {e}")
             return redirect("preview_email")
+        
+        # Validating Email Address
+        if not has_mx_record(email):
+            EmailLog.objects.create(
+                email=email,
+                name=name,
+                company=company,
+                email_body=personalized_body,
+                status="FAILED",
+                failure_reason="No MX Record found for domain"
+            )
+            continue
         
         log = EmailLog.objects.create(
             email=email,
@@ -214,6 +226,7 @@ def email_detail(request, log_id):
         "status": log.status,
         "created_at": log.created_at.strftime("%d-%m-%Y %H:%M:%S"),
         "sent_at": log.sent_at.strftime("%d-%m-%Y %H:%M:%S") if log.sent_at else None,
+        "failure_reason": log.failure_reason,
         "content_url": f"/emails/{log.id}/content/"
     })
 

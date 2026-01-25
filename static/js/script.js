@@ -209,6 +209,13 @@ async function toggleDetails(id) {
             View Email Content
         </a>
     `;
+    if (data.status === "FAILED" && data.failure_reason) {
+        currentBox.innerHTML += `
+            <p style="color:#991b1b; margin-top:8px;">
+                <b>Failure reason:</b> ${data.failure_reason}
+            </p>
+        `;
+    }
 
     currentBox.classList.remove("hidden");
 }

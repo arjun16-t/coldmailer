@@ -4,7 +4,7 @@ from django.conf import settings
 
 from .mailer import send_mail
 from .models import EmailLog
-from .utils import enforce_domain_rate_limit
+from .utils import enforce_domain_rate_limit, classify_smtp_error
 
 import os
 
@@ -28,17 +28,21 @@ def send_email_task(self, log_id):
             to_email=log.email,
             subject="Application for Software Development Engineer Internship | Arjun Tomar",
             body=log.email_body,
-            attachment_path=str(settings.BASE_DIR / "attachments" / "Arjun_Tomar_ML_Resume.pdf"),
+            attachment_path=str(
+                settings.BASE_DIR / "attachments" / "Arjun_Tomar_ML_Resume.pdf"
+            ),
         )
         
         if log:
             log.status = "SUCCESS"
             log.sent_at = timezone.now()
+            log.failure_reason = None
             log.save()
         
     except Exception as e:
         if log:
             log.status = "FAILED"
+            log.failure_reason = classify_smtp_error(e)
             log.save()
         raise e
 
