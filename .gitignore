@@ -6,3 +6,4 @@ db.sqlite3
 attachments/
 mailer/migrations/
 celerybeat-schedule*
+mailer/test_imap.py

@@ -142,5 +142,9 @@ CELERY_BEAT_SCHEDULE = {
     "check-followups-every-15-min": {
         "task": "mailer.tasks.check_followups",
         "schedule": 900.0,
-    }
+    },
+    "check-bounces-every-1-hour": {
+        "task": "mailer.tasks.check_bounces",
+        "schedule": 3600.0
+    },
 }

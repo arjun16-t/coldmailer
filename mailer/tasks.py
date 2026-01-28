@@ -2,11 +2,17 @@ from celery import shared_task
 from django.utils import timezone
 from django.conf import settings
 
+from imapclient import IMAPClient
+import pyzmail
+
 from .mailer import send_mail
 from .models import EmailLog
-from .utils import enforce_domain_rate_limit, classify_smtp_error
+from .utils import enforce_domain_rate_limit, classify_smtp_error, classify_bounce_severity
+from .utils import extract_bounce_reason, extract_recipient_from_dsn
 
 import os
+import re
+from datetime import timedelta
 
 FOLLOW_UP_MAIL = """
 Hi Arjun!
@@ -68,3 +74,54 @@ def check_followups():
         
         log.follow_up_done = True
         log.save()
+
+@shared_task
+def check_bounces():
+    IMAP_HOST = os.getenv("IMAP_HOST")
+    EMAIL_USER = os.getenv('EMAIL_USER')
+    EMAIL_PASS = os.getenv('EMAIL_PASS')
+    
+    with IMAPClient(IMAP_HOST) as client:
+        client.login(EMAIL_USER, EMAIL_PASS)
+        client.select_folder('INBOX')
+        
+        messages = client.search(["FROM", "mailer-daemon"])
+        
+        for uid in messages:
+            raw = client.fetch([uid], ["RFC822"])[uid]["RFC822"]
+            msg = pyzmail.PyzMessage.factory(raw)
+            
+            subject = msg.get_subject() or ""
+            body = ""
+            
+            if msg.text_part:
+                body = msg.text_part.get_payload().decode(
+                    msg.text_part.charset or "utf-8",
+                    errors="ignore"
+                )
+            
+            # Original Recipient
+            recipient = extract_recipient_from_dsn(body)
+            reason = extract_bounce_reason(body)
+            severity = classify_bounce_severity(reason)
+            
+            if not recipient:
+                continue
+            
+            log = EmailLog.objects.filter(
+                email__iexact=recipient,
+                status='SUCCESS'
+            ).order_by("-created_at").first()
+            
+            if not log:
+                continue
+            
+            log.failure_reason = f'{severity} bounce: {reason}'
+            if severity == 'SOFT':
+                log.status = 'PENDING'
+                log.follow_up_at = timezone.now() + timedelta(hours=24)
+            else:
+                log.status = 'FAILED'
+            log.save()
+            
+            client.add_flags(uid, ["\\SEEN"])
