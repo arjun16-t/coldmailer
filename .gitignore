@@ -7,3 +7,4 @@ attachments/
 mailer/migrations/
 celerybeat-schedule*
 mailer/test_imap.py
+staticfiles/
