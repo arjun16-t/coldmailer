@@ -117,7 +117,9 @@
         <div class="table-container">
             <table class="email-table">
                 <thead>
-                    <tr>
+                    <tr class="email-row {% if email.email in suppressed_emails %}suppressed{% endif %}"
+                    id="row-{{ email.id }}"
+                    data-status="{{ email.status }}">
                         <th>Recipient</th>
                         <th>Company</th>
                         <th>Status</th>
@@ -129,7 +131,14 @@
                     {% for email in emails %}
                     <tr class="email-row" id="row-{{ email.id }}" data-status="{{ email.status }}">
                         <td>
-                            <div class="recipient">{{ email.email }}</div>
+                            <div class="recipient">
+                                {{ email.email }}
+                                {% if email.email in suppressed_emails %}
+                                    <span class="suppressed-badge" title="Suppressed email">
+                                        🚫 Suppressed
+                                    </span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td>
                             <div class="company">{{ email.company }}</div>

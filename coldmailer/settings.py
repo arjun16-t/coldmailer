@@ -147,4 +147,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "mailer.tasks.check_bounces",
         "schedule": 3600.0
     },
+    "retry-pendin-emails-30-min": {
+        "task": "mailer.tasks.retry_pending_emails",
+        "schedule": 1800
+    },
 }

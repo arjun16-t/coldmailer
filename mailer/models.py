@@ -27,9 +27,20 @@ class EmailLog (models.Model):
     
     follow_up_at = models.DateTimeField(blank=True, null=True)
     follow_up_done = models.BooleanField(default=False)
+    
+    retry_count = models.IntegerField(default=0)
+    next_retry_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("email", "company")
 
     def __str__ (self):
         return f"{self.email} - {self.status}"
+
+class SuppressedEmail (models.Model):
+    email = models.EmailField(unique=True)
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.email

@@ -5,6 +5,8 @@ import re
 import dns.resolver
 from django.core.cache import cache
 
+from .models import SuppressedEmail
+
 DOMAIN_DELAY = random.randint(10, 70)   # seconds
 
 def enforce_domain_rate_limit(email):
@@ -50,6 +52,7 @@ def extract_recipient_from_dsn(text):
     patterns = [
         r"Original-Recipient:\s*rfc822;\s*(\S+@\S+)",
         r"Final-Recipient:\s*rfc822;\s*(\S+@\S+)",
+        r"for\s+<(\S+@\S+)>",
         r"to\s+<(\S+@\S+)>",
         r"delivering your message to\s+(\S+@\S+)",
     ]
@@ -103,3 +106,14 @@ def classify_bounce_severity(reason: str) -> str:
             return "HARD"
 
     return "SOFT"
+
+def is_suppressed(email) -> bool:
+    return SuppressedEmail.objects.filter(
+        email__iexact=email
+    ).exists()
+
+def suppress_email(email, reason):
+    SuppressedEmail.objects.get_or_create(
+        email = email,
+        defaults= {"reason":reason}
+    )

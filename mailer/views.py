@@ -5,18 +5,20 @@ from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone, html
-from datetime import timedelta
+from django.views.decorators.http import require_POST
+
 
 from .forms import UploadFileForm
 from .parser import parse_file
 from .mailer import MAIL_CONTENT
 from .tasks import send_email_task
 from .utils import has_mx_record
-from .models import EmailLog
+from .models import EmailLog, SuppressedEmail
 
 import textwrap
 import tempfile
 import os
+from datetime import timedelta
 import json
 
 def upload_file(request):
@@ -94,7 +96,11 @@ def send_emails(request):
         company = company if company and str(company).lower() != "nan" else "your company"
         
         # Prevents Duplicates
-        if EmailLog.objects.filter(email=email, company=company).exists():
+        if EmailLog.objects.filter(
+            email=email,
+            company=company,
+            status='SUCCESS'
+        ).exists():
             continue
         
         # Logging Emails
@@ -157,6 +163,8 @@ def dashboard(request):
             Q(company__icontains=query)
         )
     
+    suppressed = set(SuppressedEmail.objects.values_list('email', flat=True))
+    
     paginator = Paginator(base_qs.order_by("-created_at"), 25)
     page_obj = paginator.get_page(page_number)
     
@@ -170,6 +178,7 @@ def dashboard(request):
         "emails": page_obj,
         "query": query,
         "due_followups": due_followups,
+        "suppressed_emails": suppressed,
         "total_emails": base_qs.count(),
         "success_count": base_qs.filter(status="SUCCESS").count(),
         "failed_count": base_qs.filter(status="FAILED").count(),
@@ -195,21 +204,18 @@ def dashboard_data(request):
     
     return JsonResponse({"logs": data})
 
+@require_POST
 def retry_email(request, log_id):
     log = EmailLog.objects.get(id=log_id)
     
-    if log.status != "FAILED":
+    if log.status != "FAILED" or "HARD bounce" in (log.failure_reason or ""):
+        messages.error(request, "This email cannot be retried.")
         return redirect("dashboard")
     
     log.status = "PENDING"
     log.save()
     
-    send_email_task.delay(
-        email = log.email,
-        name = log.name,
-        company = log.company,
-        attachment_path=str(settings.BASE_DIR / "attachments" / "Arjun_Tomar_ML_Resume.pdf")
-    )
+    send_email_task.delay(log.id)
     
     return redirect("dashboard")
 
@@ -219,6 +225,7 @@ def status_page(request):
 
 def email_detail(request, log_id):
     log = EmailLog.objects.get(id=log_id)
+    suppression = SuppressedEmail.objects.filter(email=log.email).first()
     
     return JsonResponse({
         "email": log.email,
@@ -227,7 +234,9 @@ def email_detail(request, log_id):
         "created_at": log.created_at.strftime("%d-%m-%Y %H:%M:%S"),
         "sent_at": log.sent_at.strftime("%d-%m-%Y %H:%M:%S") if log.sent_at else None,
         "failure_reason": log.failure_reason,
-        "content_url": f"/emails/{log.id}/content/"
+        "content_url": f"/emails/{log.id}/content/",
+        "suppressed": bool(suppression),
+        "suppression_reason": suppression.reason if suppression else None,
     })
 
 def email_content(request, log_id):
@@ -249,6 +258,12 @@ def schedule_followup(request, log_id):
     days = int(data.get("days", 0))
     
     log = EmailLog.objects.get(id=log_id)
+    
+    if log.status != "SUCCESS":
+        return JsonResponse(
+            {"error": "Follow-ups can only be scheduled for delivered emails"},
+            status=400
+        )
     
     log.follow_up_at = timezone.now() + timedelta(days=days)
     log.follow_up_done = False

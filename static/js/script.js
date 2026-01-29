@@ -21,6 +21,7 @@ function initFilters() {
     filterButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const filter = btn.dataset.filter;
+            activeFilter = filter;
 
             filterButtons.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
@@ -67,6 +68,7 @@ function autoHideFlashMessage() {
 }
 
 /* ---------------- AUTO REFRESH ---------------- */
+let activeFilter = "all";
 
 async function refreshDashboard() {
     const res = await fetch("/dashboard/data/");
@@ -158,40 +160,57 @@ async function toggleDetails(id) {
 
     const data = await res.json();
 
-    currentBox.innerHTML = `
+    let html = `
         <p><b>Queued:</b> ${data.created_at}</p>
         <p><b>Sent:</b> ${data.sent_at ?? "Not sent yet"}</p>
-        
+    `;
+
+    if (!data.suppressed) {
+        html += `
+            <hr style="margin:10px 0">
+
+            <label><b>Schedule follow-up:</b></label>
+            <select id="followup-days-${id}">
+                <option value="3">3 days</option>
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+            </select>
+
+            <button class="filter-btn"
+                    onclick="scheduleFollowUp(${id})"
+                    style="margin-top:8px;">
+                Schedule
+            </button>
+        `;
+    }
+
+    html += `
         <hr style="margin:10px 0">
-
-        <label><b>Schedule follow-up:</b></label>
-        <select id="followup-days-${id}">
-            <option value="3">3 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-        </select>
-
-        <button class="filter-btn"
-                onclick="scheduleFollowUp(${id})"
-                style="margin-top:8px;">
-            Schedule
-        </button>
-        
-        <hr style="margin:10px 0">
-
         <a href="${data.content_url}" target="_blank">
             View Email Content
         </a>
     `;
+
     if (data.status === "FAILED" && data.failure_reason) {
-        currentBox.innerHTML += `
+        html += `
             <p style="color:#991b1b; margin-top:8px;">
                 <b>Failure reason:</b> ${data.failure_reason}
             </p>
         `;
     }
 
+    if (data.suppressed) {
+        html += `
+            <hr style="margin:10px 0">
+            <p style="color:#991b1b;">
+                <b>Suppressed:</b> ${data.suppression_reason || "Email suppressed"}
+            </p>
+        `;
+    }
+
+    currentBox.innerHTML = html;
     currentBox.classList.remove("hidden");
+
 }
 
 async function scheduleFollowUp(id) {
@@ -214,11 +233,13 @@ async function scheduleFollowUp(id) {
         return;
     }
 
-    daysSelect.innerHTML += `
-        <p style="color:green; margin-top:6px;">
+    daysSelect.disabled = true;
+    daysSelect.insertAdjacentHTML(
+        "afterend",
+        `<p style="color:green; margin-top:6px;">
             Follow-up scheduled ✔
-        </p>
-    `;
+        </p>`
+    );
 
     alert(`Follow-up scheduled in ${days} days`);
 }

@@ -8,7 +8,7 @@ import pyzmail
 from .mailer import send_mail
 from .models import EmailLog
 from .utils import enforce_domain_rate_limit, classify_smtp_error, classify_bounce_severity
-from .utils import extract_bounce_reason, extract_recipient_from_dsn
+from .utils import extract_bounce_reason, extract_recipient_from_dsn, is_suppressed, suppress_email
 
 import os
 import re
@@ -30,6 +30,12 @@ def send_email_task(self, log_id):
     if not log:
         return
     
+    if (is_suppressed(log.email)):
+        log.status = 'FAILED'
+        log.failure_reason = 'Email Suppressed due to prior hard bounce'
+        log.save()
+        return
+    
     try:
         enforce_domain_rate_limit(log.email)
         
@@ -49,11 +55,10 @@ def send_email_task(self, log_id):
             log.save()
         
     except Exception as e:
-        if log:
-            log.status = "FAILED"
-            log.failure_reason = classify_smtp_error(e)
-            log.save()
-        raise e
+        log.status = "FAILED"
+        log.failure_reason = classify_smtp_error(e)
+        log.save()
+        return
 
 @shared_task
 def check_followups():
@@ -85,11 +90,26 @@ def check_bounces():
         client.login(EMAIL_USER, EMAIL_PASS)
         client.select_folder('INBOX')
         
-        messages = client.search(["FROM", "mailer-daemon"])
+        messages = client.search([
+            "OR",
+            "FROM", "mailer-daemon",
+            "OR",
+            "FROM", "postmaster",
+            "OR",
+            "SUBJECT", "Delivery Status Notification",
+            "OR",
+            "SUBJECT", "Delivery incomplete",
+            "OR",
+            "SUBJECT", "Undelivered Mail",
+        ])
         
         for uid in messages:
             raw = client.fetch([uid], ["RFC822"])[uid]["RFC822"]
             msg = pyzmail.PyzMessage.factory(raw)
+            
+            content_type = msg.get('content-type', '').lower()
+            if 'delivery-status' not in content_type and 'delivery incomplete' not in subject.lower():
+                continue
             
             subject = msg.get_subject() or ""
             body = ""
@@ -116,12 +136,34 @@ def check_bounces():
             if not log:
                 continue
             
-            log.failure_reason = f'{severity} bounce: {reason}'
-            if severity == 'SOFT':
-                log.status = 'PENDING'
-                log.follow_up_at = timezone.now() + timedelta(hours=24)
-            else:
+            if severity == 'HARD':
                 log.status = 'FAILED'
-            log.save()
+                log.failure_reason = f'HARD Bounce: {reason}'
+                log.save()
+                suppress_email(log.email, reason)
             
+            if severity == 'SOFT':
+                log.retry_count += 1
+                
+                if log.retry_count <=3:
+                    log.status = 'PENDING'
+                    log.next_retry_at = timezone.now() + timedelta(hours=24),
+                    log.failure_reason = f'SOFT Bounce: {reason}'
+                else:
+                    log.status = 'FAILED'
+                    log.failure_reason = f'SOFT Bounce retry limit exceeded (3): {reason}'
+                log.save()
+
             client.add_flags(uid, ["\\Seen"])
+
+@shared_task
+def retry_pending_emails():
+    now = timezone.now()
+    
+    logs = EmailLog.objects.filter(
+        status = 'PENDING',
+        next_retry_at__lte = now
+    )
+    
+    for log in logs:
+        send_email_task.delay(log.id)
