@@ -7,3 +7,4 @@ imapclient
 pyzmail36
 dnspython
 python-dotenv
+pdfplumber
