@@ -9,9 +9,10 @@ from .mailer import send_mail
 from .models import EmailLog
 from .utils import enforce_domain_rate_limit, classify_smtp_error, classify_bounce_severity
 from .utils import extract_bounce_reason, extract_recipient_from_dsn, is_suppressed, suppress_email
+from .smtp_store import get_smtp_credentials
+
 
 import os
-import re
 from datetime import timedelta
 
 FOLLOW_UP_MAIL = """
@@ -62,19 +63,25 @@ def send_email_task(self, log_id):
 
 @shared_task
 def check_followups():
-    now = timezone.now()
+    creds = get_smtp_credentials()
+    if not creds:
+        return
     
     logs = EmailLog.objects.filter(
-        follow_up_at__lte = now,
+        follow_up_at__lte = timezone.now(),
         follow_up_done = False,
         status = "SUCCESS"
     )
     
+    
     for log in logs:        
         send_mail(
-            to_email=os.getenv('EMAIL_USER') or "EMAIL_USER not set",
+            to_email=creds['email'],
             subject=f"Follow Up Due with {log.name}",
-            body=FOLLOW_UP_MAIL.format(person_email=log.email, person_name=log.name)
+            body=FOLLOW_UP_MAIL.format(
+                person_email=log.email,
+                person_name=log.name
+            )
         )
         
         log.follow_up_done = True
@@ -82,9 +89,13 @@ def check_followups():
 
 @shared_task
 def check_bounces():
+    creds = get_smtp_credentials()
+    if not creds:
+        return
+
+    EMAIL_USER = creds["email"]
+    EMAIL_PASS = creds["password"]
     IMAP_HOST = os.getenv("IMAP_HOST")
-    EMAIL_USER = os.getenv('EMAIL_USER')
-    EMAIL_PASS = os.getenv('EMAIL_PASS')
     
     with IMAPClient(IMAP_HOST) as client:
         client.login(EMAIL_USER, EMAIL_PASS)
@@ -93,25 +104,25 @@ def check_bounces():
         messages = client.search([
             "OR",
             "FROM", "mailer-daemon",
-            "OR",
             "FROM", "postmaster",
-            "OR",
             "SUBJECT", "Delivery Status Notification",
-            "OR",
-            "SUBJECT", "Delivery incomplete",
-            "OR",
-            "SUBJECT", "Undelivered Mail",
         ])
         
         for uid in messages:
-            raw = client.fetch([uid], ["RFC822"])[uid]["RFC822"]
+            response = client.fetch([uid], ['BODY[]'])
+            raw = response[uid][b'BODY[]']
             msg = pyzmail.PyzMessage.factory(raw)
             
+            subject = msg.get_subject() or ""
             content_type = msg.get('content-type', '').lower()
-            if 'delivery-status' not in content_type and 'delivery incomplete' not in subject.lower():
+            
+            if (
+                'delivery-status' not in content_type
+                and 'delivery incomplete' not in subject.lower()
+                and 'undeliverable' not in subject.lower()
+            ):
                 continue
             
-            subject = msg.get_subject() or ""
             body = ""
             
             if msg.text_part:
@@ -147,7 +158,7 @@ def check_bounces():
                 
                 if log.retry_count <=3:
                     log.status = 'PENDING'
-                    log.next_retry_at = timezone.now() + timedelta(hours=24),
+                    log.next_retry_at = timezone.now() + timedelta(hours=24)
                     log.failure_reason = f'SOFT Bounce: {reason}'
                 else:
                     log.status = 'FAILED'

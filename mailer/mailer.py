@@ -1,8 +1,6 @@
-import os
 import smtplib
 from email.message import EmailMessage
-from dotenv import load_dotenv
-load_dotenv()
+from .smtp_store import get_smtp_credentials
 
 MAIL_CONTENT="""
 Dear {name},
@@ -26,15 +24,21 @@ www.github.com/arjun16-t
 """
 
 def send_mail(to_email, subject, body, attachment_path=None):
+    creds = get_smtp_credentials()
+    if not creds:
+        raise RuntimeError("SMTP credentials not configured")
+    
+    smtp_email = creds["email"]
+    smtp_password = creds["password"]
+    
     msg = EmailMessage()
     msg['Subject'] = subject
-    msg['From'] = os.getenv('EMAIL_USER')
+    msg['From'] = smtp_email
     msg['To'] = to_email
-
     
     msg.set_content(body)
     
-    if attachment_path != None:
+    if attachment_path:
         with open(attachment_path, 'rb') as f:
             msg.add_attachment(
                 f.read(),
@@ -44,5 +48,5 @@ def send_mail(to_email, subject, body, attachment_path=None):
             )
     
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-        server.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
+        server.login(smtp_email, smtp_password)
         server.send_message(msg)

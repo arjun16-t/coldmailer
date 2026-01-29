@@ -121,7 +121,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
@@ -143,12 +143,20 @@ CELERY_BEAT_SCHEDULE = {
         "task": "mailer.tasks.check_followups",
         "schedule": 900.0,
     },
-    "check-bounces-every-1-hour": {
+    "check-bounces-every-30-min": {
         "task": "mailer.tasks.check_bounces",
-        "schedule": 3600.0
+        "schedule": 1800.0,
     },
     "retry-pendin-emails-30-min": {
         "task": "mailer.tasks.retry_pending_emails",
-        "schedule": 1800
+        "schedule": 1800.0,
     },
 }
+
+# Redis
+REDIS_HOST = "127.0.0.1"
+REDIS_PORT = 6379
+REDIS_DB = 1   # (celery uses db 0)
+
+# Encryption key for SMTP credentials
+SMTP_ENCRYPTION_KEY = os.getenv("SMTP_ENCRYPTION_KEY")

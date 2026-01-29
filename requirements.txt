@@ -1,0 +1,9 @@
+Django>=4.2,<6.0
+gunicorn
+celery
+redis
+django-celery-results
+imapclient
+pyzmail36
+dnspython
+python-dotenv

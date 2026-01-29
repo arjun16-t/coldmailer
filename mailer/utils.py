@@ -4,8 +4,10 @@ import smtplib
 import re
 import dns.resolver
 from django.core.cache import cache
+from django.shortcuts import redirect
 
 from .models import SuppressedEmail
+from .smtp_store import smtp_configured
 
 DOMAIN_DELAY = random.randint(10, 70)   # seconds
 
@@ -117,3 +119,10 @@ def suppress_email(email, reason):
         email = email,
         defaults= {"reason":reason}
     )
+
+def require_smtp(view_func):
+    def wrapper(request, *args, **kwargs):
+        if not smtp_configured():
+            return redirect("/")
+        return view_func(request, *args, **kwargs)
+    return wrapper

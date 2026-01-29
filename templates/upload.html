@@ -22,6 +22,18 @@
             class="nav-link {% if request.resolver_match.url_name == 'preview_email' %}active{% endif %}">
             Preview
         </a>
+
+        <a href="{% url 'suppression_list' %}"
+            class="nav-link {% if request.resolver_match.url_name == 'suppression_list' %}active{% endif %}">
+            Suppression
+        </a>
+
+        <a href="{% url 'reset_smtp' %}"
+            class="nav-link"
+            style="color:#ef4444;"
+            onclick="return confirm('This will remove SMTP credentials. Continue?')">
+            Reset SMTP
+        </a>
     </div>
 </nav>
 

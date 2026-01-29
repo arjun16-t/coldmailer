@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from django.conf import settings
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.db.models import Q
 from django.utils import timezone, html
 from django.views.decorators.http import require_POST
@@ -12,8 +12,9 @@ from .forms import UploadFileForm
 from .parser import parse_file
 from .mailer import MAIL_CONTENT
 from .tasks import send_email_task
-from .utils import has_mx_record
+from .utils import has_mx_record, require_smtp
 from .models import EmailLog, SuppressedEmail
+from .smtp_store import set_smtp_credentials, smtp_configured, clear_smtp_credentials
 
 import textwrap
 import tempfile
@@ -21,6 +22,7 @@ import os
 from datetime import timedelta
 import json
 
+@require_smtp
 def upload_file(request):
     parsed_data = None
     error = None
@@ -49,6 +51,7 @@ def upload_file(request):
         "error": error
     })
 
+@require_smtp
 def preview_email(request):
     prefixes = set()
     
@@ -69,6 +72,7 @@ def preview_email(request):
         "template": MAIL_CONTENT
     })
 
+@require_smtp
 def send_emails(request):
     if request.method != "POST":
         return redirect("/")
@@ -164,6 +168,7 @@ def send_emails(request):
     )
     return redirect("dashboard")
 
+@require_smtp
 def dashboard(request):
     query = request.GET.get("q", "").strip()
     page_number = request.GET.get("page", 1)
@@ -232,10 +237,7 @@ def retry_email(request, log_id):
     
     return redirect("dashboard")
 
-def status_page(request):
-    logs = EmailLog.objects.order_by("-created_at")[:100]
-    return render (request, "status.html", {"logs":logs})
-
+@require_smtp
 def email_detail(request, log_id):
     log = EmailLog.objects.get(id=log_id)
     suppression = SuppressedEmail.objects.filter(email=log.email).first()
@@ -252,6 +254,7 @@ def email_detail(request, log_id):
         "suppression_reason": suppression.reason if suppression else None,
     })
 
+@require_smtp
 def email_content(request, log_id):
     log = EmailLog.objects.get(id=log_id)
     return HttpResponse(
@@ -259,6 +262,7 @@ def email_content(request, log_id):
         content_type="text/html"
     )
 
+@require_smtp
 def schedule_followup(request, log_id):
     if request.method != "POST":
         return JsonResponse({"error": "Invalid Request"}, status = 400)
@@ -284,6 +288,7 @@ def schedule_followup(request, log_id):
     
     return JsonResponse({"status": "ok"})
 
+@require_smtp
 def suppression_list(request):
     q = request.GET.get("q", "").strip()
 
@@ -316,3 +321,26 @@ def suppression_list(request):
         "query": q,
         "count": suppressed.count(),
     })
+
+def smtp_entrypoint(request):
+    if smtp_configured():
+        return redirect("upload")
+
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
+        if not email or not password:
+            messages.error(request, "Email and password are required.")
+            return redirect("/")
+
+        set_smtp_credentials(email, password)
+        messages.success(request, "SMTP credentials saved.")
+        return redirect("upload")
+
+    return render(request, "smtp_setup.html")
+
+def reset_smtp(request):
+    clear_smtp_credentials()
+    messages.success(request, "SMTP credentials cleared. Please reconfigure.")
+    return redirect("/")
