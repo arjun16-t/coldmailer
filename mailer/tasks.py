@@ -23,9 +23,12 @@ This is Arjun from your past. Your mail was sent at {person_email} and now it's 
 Click on the following button to send a Follow Up email.
 """
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+@shared_task(bind=True)
 def send_email_task(self, log_id):
     log = EmailLog.objects.filter(id=log_id, status="PENDING").first()
+    
+    if not log:
+        return
     
     try:
         enforce_domain_rate_limit(log.email)
@@ -62,10 +65,7 @@ def check_followups():
         status = "SUCCESS"
     )
     
-    for log in logs:
-        if not log:
-            raise ValueError("No pending EmailLog found")
-        
+    for log in logs:        
         send_mail(
             to_email=os.getenv('EMAIL_USER') or "EMAIL_USER not set",
             subject=f"Follow Up Due with {log.name}",
@@ -124,4 +124,4 @@ def check_bounces():
                 log.status = 'FAILED'
             log.save()
             
-            client.add_flags(uid, ["\\SEEN"])
+            client.add_flags(uid, ["\\Seen"])

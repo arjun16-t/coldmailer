@@ -25,7 +25,7 @@ www.linkedin.com/in/arjunstomar
 www.github.com/arjun16-t
 """
 
-def send_mail(to_email, subject, body, attachment_path):
+def send_mail(to_email, subject, body, attachment_path=None):
     msg = EmailMessage()
     msg['Subject'] = subject
     msg['From'] = os.getenv('EMAIL_USER')
@@ -34,13 +34,14 @@ def send_mail(to_email, subject, body, attachment_path):
     
     msg.set_content(body)
     
-    with open(attachment_path, 'rb') as f:
-        msg.add_attachment(
-            f.read(),
-            maintype='application',
-            subtype='pdf',
-            filename='Arjun_Tomar_ML_Resume.pdf'
-        )
+    if attachment_path != None:
+        with open(attachment_path, 'rb') as f:
+            msg.add_attachment(
+                f.read(),
+                maintype='application',
+                subtype='pdf',
+                filename='Arjun_Tomar_ML_Resume.pdf'
+            )
     
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))

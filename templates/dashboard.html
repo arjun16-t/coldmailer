@@ -84,17 +84,33 @@
             <button class="filter-btn" data-filter="PENDING">Pending</button>
         </div>
         
-        <!-- Search Controls -->
-        <form method="get" class="search-bar">
-            <input
-                type="text"
-                name="q"
-                placeholder="Search email or company"
-                value="{{ query }}"
-                class="search-input"
-            >
-            <button class="filter-btn active">Search</button>
-        </form>
+        <!-- Search Controls and Page Control (TOP) -->
+        <div class="search-pagination-bar">
+            <form method="get" class="search-bar">
+                <input
+                    type="text"
+                    name="q"
+                    placeholder="Search email or company"
+                    value="{{ query }}"
+                    class="search-input"
+                >
+                <button class="filter-btn active">Search</button>
+            </form>
+
+            <div class="top-pagination">
+                {% if emails.has_previous %}
+                    <a href="?page={{ emails.previous_page_number }}&q={{ query }}">← Prev</a>
+                {% endif %}
+
+                <span>
+                    Page {{ emails.number }} of {{ emails.paginator.num_pages }}
+                </span>
+
+                {% if emails.has_next %}
+                    <a href="?page={{ emails.next_page_number }}&q={{ query }}">Next →</a>
+                {% endif %}
+            </div>
+        </div>
 
         
         <!-- Email Table -->

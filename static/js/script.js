@@ -66,7 +66,7 @@ function autoHideFlashMessage() {
     }, 4000);
 }
 
-/* ---------------- DASHBOARD REFRESH ---------------- */
+/* ---------------- AUTO REFRESH ---------------- */
 
 async function refreshDashboard() {
     const res = await fetch("/dashboard/data/");
@@ -78,49 +78,23 @@ async function refreshDashboard() {
     logs.forEach(log => {
         let row = document.getElementById(`row-${log.id}`);
 
-        if (!row) {
-            row = createRow(log);
-            tbody.prepend(row);
-            highlight(row);
-            return;
-        }
+        if (!row) return;
 
         if (row.dataset.status !== log.status) {
             updateRowStatus(row, log.status);
             highlight(row);
         }
+
+        row.classList.toggle(
+            "hidden",
+            activeFilter !== "all" && log.status !== activeFilter
+        );
     });
 }
 
 setInterval(refreshDashboard, 15000);
 
 /* ---------------- ROW HELPERS ---------------- */
-
-function createRow(log) {
-    const row = document.createElement("tr");
-    row.className = "email-row";
-    row.id = `row-${log.id}`;
-    row.dataset.status = log.status;
-
-    row.innerHTML = `
-        <td>${log.email}</td>
-        <td>${log.company}</td>
-        <td>
-            <span class="status-badge status-${log.status.toLowerCase()}">
-                ${log.status}
-            </span>
-        </td>
-        <td>${log.created_at}</td>
-        <td>
-            <button class="filter-btn view-details-btn" data-id="${log.id}">
-                View Details
-            </button>
-            <div id="details-${log.id}" class="hidden"></div>
-        </td>
-    `;
-
-    return row;
-}
 
 function updateRowStatus(row, status) {
     row.dataset.status = status;

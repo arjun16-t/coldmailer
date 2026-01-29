@@ -76,9 +76,10 @@
 </div>
 
 <!-- Contacts Table -->
-<div class="table-container">
-    <form method="post" action="{% url 'preview_email' %}">
-        {% csrf_token %}
+<form method="post" action="{% url 'preview_email' %}">
+    {% csrf_token %}
+
+    <div class="table-container">
         <table class="email-table">
             <thead>
                 <tr>
@@ -110,14 +111,13 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
 
-        <div class="filter-btn secondary">
-            <button type="submit" class="filter-btn active">
-                Preview Email
-            </button>
-        </div>
-    </form>
-</div>
+    <button type="submit" class="filter-btn active">
+        Preview Email
+    </button>
+</form>
+
 {% endif %}
 
 <script src="{% static 'js/upload.js' %}"></script>
