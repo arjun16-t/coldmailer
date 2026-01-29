@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     autoHideFlashMessage();
 });
 
+let activeFilter = "all";
+
 /* ---------------- GET CSRF TOKEN ---------------- */
 
 function getCSRFToken() {
@@ -68,7 +70,6 @@ function autoHideFlashMessage() {
 }
 
 /* ---------------- AUTO REFRESH ---------------- */
-let activeFilter = "all";
 
 async function refreshDashboard() {
     const res = await fetch("/dashboard/data/");

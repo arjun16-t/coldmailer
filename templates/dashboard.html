@@ -32,6 +32,11 @@
                 class="nav-link {% if request.resolver_match.url_name == 'preview_email' %}active{% endif %}">
                 Preview
             </a>
+
+            <a href="{% url 'suppression_list' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'suppression_list' %}active{% endif %}">
+                Suppression
+            </a>
         </div>
     </nav>
     <div class="dashboard-container">      

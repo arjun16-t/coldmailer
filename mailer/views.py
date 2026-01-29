@@ -103,6 +103,19 @@ def send_emails(request):
         ).exists():
             continue
         
+        # Suppression check
+        suppressed = SuppressedEmail.objects.filter(email__iexact=email).first()
+        if suppressed:
+            EmailLog.objects.create(
+                email=email,
+                name=name,
+                company=company,
+                email_body=personalized_body,
+                status="FAILED",
+                failure_reason=f"Suppressed: {suppressed.reason}"
+            )
+            continue
+        
         # Logging Emails
         try:
             personalized_body = email_body_template.format(
@@ -270,3 +283,36 @@ def schedule_followup(request, log_id):
     log.save()
     
     return JsonResponse({"status": "ok"})
+
+def suppression_list(request):
+    q = request.GET.get("q", "").strip()
+
+    suppressed = SuppressedEmail.objects.all().order_by("-created_at")
+
+    if q:
+        suppressed = suppressed.filter(email__icontains=q)
+
+    # Map for quick lookup
+    related_logs = {
+        log.email.lower(): log
+        for log in EmailLog.objects.filter(
+            email__in=[s.email for s in suppressed]
+        )
+    }
+
+    rows = []
+    for s in suppressed:
+        rows.append({
+            "email": s.email,
+            "reason": s.reason,
+            "created_at": s.created_at,
+            "has_log": s.email.lower() in related_logs,
+            "log_id": related_logs.get(s.email.lower()).id
+                if s.email.lower() in related_logs else None
+        })
+
+    return render(request, "suppression.html", {
+        "rows": rows,
+        "query": q,
+        "count": suppressed.count(),
+    })

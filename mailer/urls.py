@@ -1,11 +1,13 @@
 from django.urls import path
 from .views import upload_file, preview_email, send_emails, dashboard, schedule_followup
-from .views import retry_email, status_page, dashboard_data, email_detail, email_content
+from .views import retry_email, status_page, dashboard_data, email_detail, email_content, suppression_list
 
 urlpatterns = [
     path("", upload_file, name="upload"),
     path("preview/", preview_email, name="preview_email"),
     path("send/", send_emails, name="send_emails"),         # POST only
+    path("suppression/", suppression_list, name="suppression_list"),
+
     
     path("dashboard/", dashboard, name="dashboard"),
     path("dashboard/data/", dashboard_data, name="dashboard_data"),
