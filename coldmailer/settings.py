@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -161,3 +162,5 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 
 # Encryption key for SMTP credentials
 SMTP_ENCRYPTION_KEY = os.getenv("SMTP_ENCRYPTION_KEY")
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
