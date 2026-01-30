@@ -10,3 +10,5 @@ python-dotenv
 pdfplumber
 pandas
 whitenoise
+dj_database_url
+psycopg[binary]
