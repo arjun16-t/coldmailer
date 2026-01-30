@@ -41,33 +41,48 @@
 <div class="status-card total">
     <form method="post" enctype="multipart/form-data" id="upload-form">
         {% csrf_token %}
-
-        <div id="drop-zone"
-                style="
-                    border:2px dashed #c7d2fe;
-                    border-radius:12px;
-                    padding:32px;
-                    text-align:center;
-                    cursor:pointer;
-                    background:#f8fafc;
-                    position:relative;
-                ">
-            <p class="text-muted">
-                Drag & drop your file here or click to browse
-            </p>
-            <div style="height:0; overflow: hidden;">
-                {{ form }}
-            </div>
-            <p id="file-info" class="text-muted" style="margin-top:12px;"></p>
-        </div>
         
-        <button type="submit" class="filter-btn active" style="margin-top:16px;">
-            Upload File
-        </button>
-        <span class="filter-label">
-            &nbsp;&nbsp;Accepted formats: PDF, XLSX, CSV
-        </span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            
+            <div class="upload-card">
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem;">1. Contact List (CSV/Excel)</h3>
+                <div class="drop-zone" id="drop-zone-contacts" data-type="contacts">
+                    <p class="text-muted">Drag contacts here</p>
+                    <div style="height:0; overflow: hidden;">
+                        {{ form.file }} 
+                    </div>
+                    <p class="file-info text-muted" style="margin-top:12px; font-size: 0.9rem;"></p>
+                </div>
+            </div>
+
+            <div class="upload-card">
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem;">2. Resume (PDF)</h3>
+                <div class="drop-zone" id="drop-zone-resume" data-type="resume">
+                    <p class="text-muted">Drag resume here</p>
+                    <div style="height:0; overflow: hidden;">
+                        <input type="file" name="resume_file" id="resume_input" accept=".pdf">
+                    </div>
+                    <p class="file-info text-muted" style="margin-top:12px; font-size: 0.9rem;"></p>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="text-align: center;">
+            <button type="submit" class="filter-btn active">Process Files</button>
+        </div>
     </form>
+
+    <style>
+        .upload-card {
+            background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .drop-zone {
+            border: 2px dashed #c7d2fe; border-radius: 8px; padding: 20px;
+            text-align: center; cursor: pointer; background: #f8fafc; transition: 0.2s;
+        }
+        .drop-zone:hover { border-color: #6366f1; }
+    </style>
 
     {% if error %}
         <p style="color:#ef4444; margin-top:12px;">

@@ -25,7 +25,7 @@ Click on the following button to send a Follow Up email.
 """
 
 @shared_task(bind=True)
-def send_email_task(self, log_id):
+def send_email_task(self, log_id, attachment_path=None):
     log = EmailLog.objects.filter(id=log_id, status="PENDING").first()
     
     if not log:
@@ -44,9 +44,7 @@ def send_email_task(self, log_id):
             to_email=log.email,
             subject="Application for Software Development Engineer Internship | Arjun Tomar",
             body=log.email_body,
-            attachment_path=str(
-                settings.BASE_DIR / "attachments" / "Arjun_Tomar_ML_Resume.pdf"
-            ),
+            attachment_path=attachment_path
         )
         
         if log:

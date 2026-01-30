@@ -19,6 +19,10 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+IS_PRODUCTION = 'RAILWAY_ENVIRONMENT' in os.environ
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -27,11 +31,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['.up.railway.app']
-
-CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
+if IS_PRODUCTION:
+    DEBUG = False
+    ALLOWED_HOSTS = ['.up.railway.app'] # Add your custom domain here if you buy one
+    CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
+    
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = ['*'] # Allow all hosts locally (localhost, 127.0.0.1)
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 
 # Application definition
@@ -140,11 +148,13 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
 CELERY_BEAT_SCHEDULE = {
     "check-followups-every-15-min": {
         "task": "mailer.tasks.check_followups",
@@ -160,10 +170,16 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-# Redis
-REDIS_HOST = "127.0.0.1"
-REDIS_PORT = 6379
-REDIS_DB = 1   # (celery uses db 0)
+# Redis Settings
+if IS_PRODUCTION:
+    REDIS_HOST = None 
+    REDIS_PORT = None
+    REDIS_DB = 0
+else:
+    # Local defaults
+    REDIS_HOST = "127.0.0.1"
+    REDIS_PORT = 6379
+    REDIS_DB = 1   # (celery uses db 0, your cache uses db 1)
 
 # Encryption key for SMTP credentials
 SMTP_ENCRYPTION_KEY = os.getenv("SMTP_ENCRYPTION_KEY")
