@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize Contact List Zone
-    setupDropZone('drop-zone-contacts', 'input[name="file"]', ['csv', 'xlsx', 'xls']);
+    setupDropZone('drop-zone-contacts', 'input[name="file"]', ['csv', 'xlsx', 'xls', 'pdf']);
     
     // Initialize Resume Zone
     setupDropZone('drop-zone-resume', '#resume_input', ['pdf']);
