@@ -3,10 +3,11 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.core.cache import cache
+from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
 from django.utils import timezone, html
 from django.views.decorators.http import require_POST
-
+from django.conf import settings
 
 from .forms import UploadFileForm
 from .parser import parse_file
@@ -28,6 +29,18 @@ def upload_file(request):
     error = None
     
     if request.method == 'POST':
+        # 1. Handle RESUME Logic
+        if 'resume_file' in request.FILES:
+            resume = request.FILES['resume_file']
+            # Temporary Storage
+            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'temp_resumes'))
+            
+            # If a file with same name exists, Django automatically renames it (e.g., resume_1.pdf)
+            filename = fs.save(resume.name, resume)
+            
+            request.session['resume_path'] = fs.path(filename)
+        
+        # Handle FILE Upload
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             uploaded = form.cleaned_data['file']
@@ -41,14 +54,14 @@ def upload_file(request):
                 parsed_data = parse_file(tmp.name)
             except Exception as e:
                 error = str(e)
-        
     else:
         form = UploadFileForm()
         
     return render(request, "upload.html", {
         "form": form,
         "parsed_data": parsed_data,
-        "error": error
+        "error": error,
+        "resume_uploaded": 'resume_path' in request.session
     })
 
 @require_smtp
@@ -76,6 +89,12 @@ def preview_email(request):
 def send_emails(request):
     if request.method != "POST":
         return redirect("/")
+    
+    resume_path = request.session.get('resume_path')
+    
+    if not resume_path or not os.path.exists(resume_path):
+        messages.error(request, "Resume file not found. Please upload it again.")
+        return redirect("upload_file")
     
     raw_body = request.POST.get("email_body", "")
     email_body_template = textwrap.dedent(raw_body).strip()
@@ -151,10 +170,11 @@ def send_emails(request):
         )
         
         try:
-            result = send_email_task.delay(log.id)
+            # 2. PASS THE RESUME PATH TO CELERY
+            result = send_email_task.delay(log.id, attachment_path=resume_path)
+            
             log.task_id = result.id
             log.save()
-            
             sent_count += 1
             
         except Exception as e:

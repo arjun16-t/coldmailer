@@ -7,8 +7,8 @@ imapclient
 pyzmail36
 dnspython
 python-dotenv
+psycopg2-binary
+dj-database-url
+whitenoise
 pdfplumber
 pandas
-whitenoise
-dj_database_url
-psycopg[binary]

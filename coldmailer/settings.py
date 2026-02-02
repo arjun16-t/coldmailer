@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
+from dotenv import load_dotenv
 import os
 if os.getenv("RAILWAY_ENVIRONMENT") is None:
     from dotenv import load_dotenv
@@ -19,6 +21,8 @@ if os.getenv("RAILWAY_ENVIRONMENT") is None:
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -29,11 +33,11 @@ if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY not set")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = False
 
-ALLOWED_HOSTS = [
-    ".up.railway.app",
-]
+ALLOWED_HOSTS = ['.up.railway.app']
+
+CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
 
 
 # Application definition
@@ -89,6 +93,9 @@ DATABASES = {
         conn_max_age=600,
     )
 }
+# If the 'DATABASE_URL' environment variable exists (which Railway provides), use it.
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 
 # Password validation
@@ -126,7 +133,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
@@ -136,8 +144,8 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
-CELERY_ACCEPT_CONTENT = ['json']
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'

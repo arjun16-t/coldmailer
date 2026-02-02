@@ -1,75 +1,75 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    /* ---------------- UPLOAD (SAFE) ---------------- */
+    /* ---------------- GENERIC UPLOAD HANDLER ---------------- */
+    function setupDropZone(zoneId, inputSelector, allowedExts) {
+        const zone = document.getElementById(zoneId);
+        if (!zone) return;
 
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = dropZone?.querySelector('input[type="file"]');
-    const fileInfo = document.getElementById('file-info');
+        // Find input inside the zone (or by ID if specific)
+        const input = zone.querySelector(inputSelector) || zone.querySelector('input[type="file"]');
+        const info = zone.querySelector('.file-info');
 
-    if (dropZone && fileInput) {
-        const allowed = ['pdf', 'csv', 'xlsx'];
+        if (!input) return;
 
-        dropZone.addEventListener('click', () => fileInput.click());
+        zone.addEventListener('click', () => input.click());
 
-        dropZone.addEventListener('dragover', e => {
+        zone.addEventListener('dragover', e => {
             e.preventDefault();
-            dropZone.style.background = '#eef2ff';
+            zone.style.background = '#eef2ff';
         });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.background = '#f8fafc';
+        zone.addEventListener('dragleave', () => {
+            zone.style.background = '#f8fafc';
         });
 
-        dropZone.addEventListener('drop', e => {
+        zone.addEventListener('drop', e => {
             e.preventDefault();
-            dropZone.style.background = '#f8fafc';
-            fileInput.files = e.dataTransfer.files;
-            validateFile();
+            zone.style.background = '#f8fafc';
+            input.files = e.dataTransfer.files;
+            validate(input.files[0]);
         });
 
-        fileInput.addEventListener('change', validateFile);
+        input.addEventListener('change', () => validate(input.files[0]));
 
-        function validateFile() {
-            const file = fileInput.files[0];
+        function validate(file) {
             if (!file) return;
-
             const ext = file.name.split('.').pop().toLowerCase();
-            if (!allowed.includes(ext)) {
-                fileInfo.textContent = 'Invalid file type';
-                fileInfo.style.color = '#ef4444';
-                fileInput.value = '';
-                return;
+            
+            if (!allowedExts.includes(ext)) {
+                info.textContent = 'Invalid file type';
+                info.style.color = '#ef4444';
+                input.value = ''; // Clear input
+            } else {
+                info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                info.style.color = '#10b981';
             }
-
-            fileInfo.textContent =
-                `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-            fileInfo.style.color = '#10b981';
         }
     }
 
-    /* ---------------- CHECKBOXES (ALWAYS ACTIVE) ---------------- */
+    // Initialize Contact List Zone
+    setupDropZone('drop-zone-contacts', 'input[name="file"]', ['csv', 'xlsx', 'xls', 'pdf']);
+    
+    // Initialize Resume Zone
+    setupDropZone('drop-zone-resume', '#resume_input', ['pdf']);
 
+
+    /* ---------------- CHECKBOXES ---------------- */
     const selectAll = document.getElementById('select-all');
     const selectedCount = document.getElementById('selected-count');
 
     function updateCount() {
         if (!selectedCount) return;
-        selectedCount.textContent =
-            document.querySelectorAll('.row-check:checked').length;
+        selectedCount.textContent = document.querySelectorAll('.row-check:checked').length;
     }
 
     if (selectAll) {
         selectAll.addEventListener('change', () => {
-            document.querySelectorAll('.row-check').forEach(cb => {
-                cb.checked = selectAll.checked;
-            });
+            document.querySelectorAll('.row-check').forEach(cb => cb.checked = selectAll.checked);
             updateCount();
         });
     }
 
     document.addEventListener('change', e => {
-        if (e.target.classList.contains('row-check')) {
-            updateCount();
-        }
+        if (e.target.classList.contains('row-check')) updateCount();
     });
 });
