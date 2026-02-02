@@ -14,7 +14,9 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 import os
-load_dotenv()
+if os.getenv("RAILWAY_ENVIRONMENT") is None:
+    from dotenv import load_dotenv
+    load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +28,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY not set")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -46,7 +50,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mailer',
-    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -83,12 +86,12 @@ WSGI_APPLICATION = 'coldmailer.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+import dj_database_url
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+    )
 }
 # If the 'DATABASE_URL' environment variable exists (which Railway provides), use it.
 if 'DATABASE_URL' in os.environ:
@@ -163,9 +166,13 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # Redis
-REDIS_HOST = "127.0.0.1"
-REDIS_PORT = 6379
-REDIS_DB = 1   # (celery uses db 0)
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 
 # Encryption key for SMTP credentials
 SMTP_ENCRYPTION_KEY = os.getenv("SMTP_ENCRYPTION_KEY")
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.up.railway.app",
+]
