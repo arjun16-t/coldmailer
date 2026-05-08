@@ -1,2 +1,0 @@
-web: gunicorn coldmailer.wsgi
-worker: celery -A coldmailer worker -l info
