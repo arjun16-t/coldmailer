@@ -260,17 +260,6 @@ python manage.py migrate && python manage.py collectstatic --noinput && gunicorn
 
 ---
 
-# 📷 Suggested Screenshots
-
-Add these images to improve the repository:
-
-- Architecture diagram
-- Railway deployment dashboard
-- Email generation UI
-- Task processing logs
-
----
-
 # 🧠 What This Project Demonstrates
 
 This project focuses on:
