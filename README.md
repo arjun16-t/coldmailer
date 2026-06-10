@@ -277,9 +277,6 @@ This project focuses on:
 
 ## Arjun Tomar
 
-- LinkedIn: your-linkedin
-- GitHub: your-github
-
 ---
 
 # ⭐ Final Note
