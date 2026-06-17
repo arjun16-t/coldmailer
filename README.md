@@ -257,6 +257,8 @@ python manage.py migrate && python manage.py collectstatic --noinput && gunicorn
 - 🎯 ATS optimization
 - 📬 Campaign tracking
 - 📑 Email templates
+- 🌐 Web Scraper for E-Mails
+- 📈 Lead Generation
 
 ---
 
